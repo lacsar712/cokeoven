@@ -16,7 +16,11 @@ func (a *App) ExecutePlan(ctx context.Context, plan SegmentPlan) error {
 	if a.scheduler == nil {
 		return nil
 	}
-	return a.scheduler.InstallVentPlanCtx(context.Background(), clock.VentPlan{VentSteps: plan.VentSteps}, "segment-plan")
+	// Propagate ctx so a window revocation (cancel) issued at the screen layer
+	// reaches the plan coordination layer; otherwise InstallVentPlanCtx receives
+	// an uncancellable context and keeps appending heating steps after the
+	// carbonization window has been withdrawn.
+	return a.scheduler.InstallVentPlanCtx(ctx, clock.VentPlan{VentSteps: plan.VentSteps}, "segment-plan")
 }
 
 func (a *App) SegmentVentStepsDone() int {
