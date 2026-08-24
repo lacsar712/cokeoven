@@ -27,9 +27,9 @@ func (f *CokingFSM) State() model.DryState { return f.state }
 func (f *CokingFSM) Dispatch(ctx context.Context, event string) (model.DryState, error) {
 	next, ok := allowedDry(f.state, event)
 	if !ok {
-		if f.hooks != nil {
-			_ = f.hooks.RunAfter(ctx, f.state, f.state, event)
-		}
+		// Rejected transitions must not drive side effects: the execution chain
+		// (gas valve pulse) is wired to OnAfter hooks, so running them here would
+		// emit a gas pulse out of the bypass path while the tower sits in standby.
 		return f.state, fmt.Errorf("%s from %s: %w", event, f.state, ErrIllegalDryTransition)
 	}
 	from := f.state
