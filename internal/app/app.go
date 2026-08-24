@@ -154,7 +154,16 @@ func (a *App) ApplyScheduleSnapshot(ctx context.Context, id model.ScheduleID) er
 	now := a.clk.Now()
 	entry, ok := a.sched.ActiveEntry(snap, now)
 	if !ok {
-		return model.Wrap("app", "schedule", model.ErrScheduleEmpty)
+		// Distinguish a schedule that has not reached its window yet
+		// (carbonization countdown still ticking) from a schedule that was
+		// cleared by the backend. Only an empty entry set is a true
+		// "no schedule" state that should render the blank page; a schedule
+		// with future-only entries is awaiting activation and must not be
+		// conflated with the cleared-schedule blank state.
+		if len(snap.Entries) == 0 {
+			return model.Wrap("app", "schedule", model.ErrScheduleEmpty)
+		}
+		return model.Wrap("app", "carbon_wait", model.ErrCarbonHold)
 	}
 	a.plant.BindAirflow(entry.Plenum, entry.Setpoint)
 	a.plant.ArmMoistureHold(now, time.Duration(entry.EqualizeMinutes)*time.Minute, entry.TargetMoistPct)
