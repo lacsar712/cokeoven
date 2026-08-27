@@ -1,6 +1,6 @@
 # cokeoven
 
-Coke oven battery heating process control.
+cokeoven 是一套焦炉电池加热工业过程控制系统，用于炉温监测、加热调节与过程联锁。
 
 ## Requirements
 
